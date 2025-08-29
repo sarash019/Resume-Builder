@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .resume-section {
+            padding: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .resume-section:last-child {
+            border-bottom: none;
+        }
+        .form-section {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        .resume-preview {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+        }
+        input, textarea {
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8">
+        <!-- Input Form -->
+        <div class="form-section">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Enter Your Details</h2>
+            <form id="resumeForm" class="space-y-6">
+                <!-- Personal Information -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Personal Information</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="name" placeholder="Full Name" class="w-full">
+                        <input type="text" id="jobTitle" placeholder="Job Title" class="w-full">
+                        <input type="email" id="email" placeholder="Email" class="w-full">
+                        <input type="tel" id="phone" placeholder="Phone Number" class="w-full">
+                        <input type="text" id="location" placeholder="Location" class="w-full">
+                        <textarea id="summary" placeholder="Professional Summary" rows="4" class="w-full"></textarea>
+                    </div>
+                </div>
+
+                <!-- Experience -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Work Experience</h3>
+                    <div id="experience-container" class="space-y-4">
+                        <div class="experience-entry space-y-2 border border-gray-200 rounded-md p-4">
+                            <input type="text" class="experience-job-title" placeholder="Job Title">
+                            <input type="text" class="experience-company" placeholder="Company">
+                            <input type="text" class="experience-dates" placeholder="Start Date - End Date">
+                            <textarea class="experience-description" placeholder="Responsibilities and Achievements" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <button type="button" id="addExperience" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Add Experience</button>
+                </div>
+
+                <!-- Education -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Education</h3>
+                    <div id="education-container" class="space-y-4">
+                        <div class="education-entry space-y-2 border border-gray-200 rounded-md p-4">
+                            <input type="text" class="education-degree" placeholder="Degree/Major">
+                            <input type="text" class="education-university" placeholder="University/School">
+                            <input type="text" class="education-dates" placeholder="Graduation Year">
+                        </div>
+                    </div>
+                    <button type="button" id="addEducation" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Add Education</button>
+                </div>
+
+                <!-- Skills -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Skills</h3>
+                    <textarea id="skills" placeholder="List your skills, separated by commas (e.g., JavaScript, React, HTML, CSS)" rows="2" class="w-full"></textarea>
+                </div>
+
+                <div class="flex justify-end mt-8">
+                    <button type="button" id="downloadPdf" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-colors">Download PDF</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Resume Preview -->
+        <div class="resume-preview lg:sticky lg:top-8" id="resume-template">
+            <div class="text-center mb-8">
+                <h1 id="preview-name" class="text-4xl font-bold text-gray-900">Your Name</h1>
+                <p id="preview-job-title" class="text-lg text-gray-600 mt-2">Your Job Title</p>
+                <div class="text-sm text-gray-500 mt-4 flex justify-center items-center space-x-4">
+                    <span id="preview-email">email@example.com</span>
+                    <span id="preview-phone">123-456-7890</span>
+                    <span id="preview-location">City, Country</span>
+                </div>
+            </div>
+
+            <!-- Professional Summary -->
+            <div class="resume-section">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Summary</h2>
+                <p id="preview-summary" class="text-gray-700 text-sm leading-relaxed">A brief, compelling summary of your professional background and career goals. Highlight your key strengths and accomplishments.</p>
+            </div>
+
+            <!-- Experience -->
+            <div class="resume-section">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Experience</h2>
+                <div id="preview-experience" class="space-y-4">
+                    <!-- Default Experience Entry -->
+                    <div class="experience-entry">
+                        <h3 class="font-bold text-gray-800">Job Title, <span class="font-normal text-gray-600">Company</span></h3>
+                        <p class="text-gray-500 text-sm">Start Date - End Date</p>
+                        <ul class="list-disc pl-5 text-gray-700 text-sm">
+                            <li>Responsibility and achievement #1.</li>
+                            <li>Responsibility and achievement #2.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Education -->
+            <div class="resume-section">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Education</h2>
+                <div id="preview-education" class="space-y-4">
+                    <!-- Default Education Entry -->
+                    <div class="education-entry">
+                        <h3 class="font-bold text-gray-800">Degree, <span class="font-normal text-gray-600">University</span></h3>
+                        <p class="text-gray-500 text-sm">Graduation Year</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="resume-section">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Skills</h2>
+                <p id="preview-skills" class="text-gray-700 text-sm">List of skills, separated by commas.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('resumeForm');
+            const resumeTemplate = document.getElementById('resume-template');
+            const downloadPdfBtn = document.getElementById('downloadPdf');
+            const addExperienceBtn = document.getElementById('addExperience');
+            const addEducationBtn = document.getElementById('addEducation');
+
+            const experienceContainer = document.getElementById('experience-container');
+            const educationContainer = document.getElementById('education-container');
+
+            // Initial content for the preview
+            const defaultPreviewContent = {
+                name: 'Your Name',
+                jobTitle: 'Your Job Title',
+                email: 'email@example.com',
+                phone: '123-456-7890',
+                location: 'City, Country',
+                summary: 'A brief, compelling summary of your professional background and career goals. Highlight your key strengths and accomplishments.',
+                experience: [
+                    {
+                        jobTitle: 'Job Title',
+                        company: 'Company',
+                        dates: 'Start Date - End Date',
+                        description: 'Responsibility and achievement #1.\nResponsibility and achievement #2.'
+                    }
+                ],
+                education: [
+                    {
+                        degree: 'Degree',
+                        university: 'University',
+                        dates: 'Graduation Year'
+                    }
+                ],
+                skills: 'List of skills, separated by commas.'
+            };
+
+            // Function to update the resume preview based on form input
+            const updatePreview = () => {
+                // Personal Info
+                document.getElementById('preview-name').textContent = document.getElementById('name').value || defaultPreviewContent.name;
+                document.getElementById('preview-job-title').textContent = document.getElementById('jobTitle').value || defaultPreviewContent.jobTitle;
+                document.getElementById('preview-email').textContent = document.getElementById('email').value || defaultPreviewContent.email;
+                document.getElementById('preview-phone').textContent = document.getElementById('phone').value || defaultPreviewContent.phone;
+                document.getElementById('preview-location').textContent = document.getElementById('location').value || defaultPreviewContent.location;
+                document.getElementById('preview-summary').textContent = document.getElementById('summary').value || defaultPreviewContent.summary;
+
+                // Experience
+                const previewExperience = document.getElementById('preview-experience');
+                previewExperience.innerHTML = '';
+                document.querySelectorAll('.experience-entry').forEach(entry => {
+                    const jobTitle = entry.querySelector('.experience-job-title').value;
+                    const company = entry.querySelector('.experience-company').value;
+                    const dates = entry.querySelector('.experience-dates').value;
+                    const description = entry.querySelector('.experience-description').value;
+
+                    if (jobTitle || company || dates || description) {
+                        const newEntry = document.createElement('div');
+                        newEntry.classList.add('experience-entry');
+                        newEntry.innerHTML = `
+                            <h3 class="font-bold text-gray-800">${jobTitle || 'Job Title'}, <span class="font-normal text-gray-600">${company || 'Company'}</span></h3>
+                            <p class="text-gray-500 text-sm">${dates || 'Dates'}</p>
+                            <ul class="list-disc pl-5 text-gray-700 text-sm">
+                                ${description.split('\n').map(line => `<li>${line}</li>`).join('')}
+                            </ul>
+                        `;
+                        previewExperience.appendChild(newEntry);
+                    }
+                });
+
+                if (previewExperience.innerHTML === '') {
+                    previewExperience.innerHTML = `
+                        <div class="experience-entry">
+                            <h3 class="font-bold text-gray-800">Job Title, <span class="font-normal text-gray-600">Company</span></h3>
+                            <p class="text-gray-500 text-sm">Start Date - End Date</p>
+                            <ul class="list-disc pl-5 text-gray-700 text-sm">
+                                <li>Responsibility and achievement #1.</li>
+                                <li>Responsibility and achievement #2.</li>
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                // Education
+                const previewEducation = document.getElementById('preview-education');
+                previewEducation.innerHTML = '';
+                document.querySelectorAll('.education-entry').forEach(entry => {
+                    const degree = entry.querySelector('.education-degree').value;
+                    const university = entry.querySelector('.education-university').value;
+                    const dates = entry.querySelector('.education-dates').value;
+
+                    if (degree || university || dates) {
+                        const newEntry = document.createElement('div');
+                        newEntry.classList.add('education-entry');
+                        newEntry.innerHTML = `
+                            <h3 class="font-bold text-gray-800">${degree || 'Degree'}, <span class="font-normal text-gray-600">${university || 'University'}</span></h3>
+                            <p class="text-gray-500 text-sm">${dates || 'Graduation Year'}</p>
+                        `;
+                        previewEducation.appendChild(newEntry);
+                    }
+                });
+
+                if (previewEducation.innerHTML === '') {
+                    previewEducation.innerHTML = `
+                        <div class="education-entry">
+                            <h3 class="font-bold text-gray-800">Degree, <span class="font-normal text-gray-600">University</span></h3>
+                            <p class="text-gray-500 text-sm">Graduation Year</p>
+                        </div>
+                    `;
+                }
+
+                // Skills
+                document.getElementById('preview-skills').textContent = document.getElementById('skills').value || defaultPreviewContent.skills;
+            };
+
+            // Event listeners to update preview in real-time
+            form.addEventListener('input', updatePreview);
+
+            // Add new experience entry
+            addExperienceBtn.addEventListener('click', () => {
+                const newExperienceEntry = document.createElement('div');
+                newExperienceEntry.classList.add('experience-entry', 'space-y-2', 'border', 'border-gray-200', 'rounded-md', 'p-4');
+                newExperienceEntry.innerHTML = `
+                    <input type="text" class="experience-job-title" placeholder="Job Title">
+                    <input type="text" class="experience-company" placeholder="Company">
+                    <input type="text" class="experience-dates" placeholder="Start Date - End Date">
+                    <textarea class="experience-description" placeholder="Responsibilities and Achievements" rows="2"></textarea>
+                    <button type="button" class="remove-entry text-red-500 hover:text-red-700 transition-colors">Remove</button>
+                `;
+                experienceContainer.appendChild(newExperienceEntry);
+            });
+
+            // Add new education entry
+            addEducationBtn.addEventListener('click', () => {
+                const newEducationEntry = document.createElement('div');
+                newEducationEntry.classList.add('education-entry', 'space-y-2', 'border', 'border-gray-200', 'rounded-md', 'p-4');
+                newEducationEntry.innerHTML = `
+                    <input type="text" class="education-degree" placeholder="Degree/Major">
+                    <input type="text" class="education-university" placeholder="University/School">
+                    <input type="text" class="education-dates" placeholder="Graduation Year">
+                    <button type="button" class="remove-entry text-red-500 hover:text-red-700 transition-colors">Remove</button>
+                `;
+                educationContainer.appendChild(newEducationEntry);
+            });
+
+            // Handle remove button clicks using event delegation
+            document.addEventListener('click', (event) => {
+                if (event.target.classList.contains('remove-entry')) {
+                    event.target.closest('.experience-entry, .education-entry').remove();
+                    updatePreview(); // Update the preview after removing an entry
+                }
+            });
+
+            // PDF Download functionality
+            downloadPdfBtn.addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const element = document.getElementById('resume-template');
+                const originalBg = element.style.backgroundColor;
+                element.style.backgroundColor = '#ffffff'; // Set background to white for PDF
+
+                html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save('resume.pdf');
+                    element.style.backgroundColor = originalBg; // Restore original background
+                }).catch(error => {
+                    console.error('Error generating PDF:', error);
+                    alert('An error occurred while generating the PDF. Please try again.');
+                    element.style.backgroundColor = originalBg; // Restore original background on error
+                });
+            });
+
+            // Initial call to set up the preview with default content
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
